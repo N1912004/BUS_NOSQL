@@ -1,0 +1,8 @@
+{
+    "name": "bus-management-system/arangodb-migration",
+    "description": "ArangoDB migration for Bus Management System",
+    "type": "project",
+    "require": {
+        "triagens/arangodb": "^3.8"
+    }
+}

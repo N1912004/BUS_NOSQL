@@ -1,0 +1,312 @@
+<?php
+session_start();
+
+if ($_SESSION['status'] != "Active") {
+    header("location:../Login/dist/login.php");
+}
+
+require_once 'arangodb_connection.php';
+
+use ArangoDBClient\Statement as ArangoStatement;
+use ArangoDBClient\DocumentHandler as ArangoDocumentHandler;
+use ArangoDBClient\Document as ArangoDocument;
+use ArangoDBClient\CollectionHandler as ArangoCollectionHandler;
+
+$documentHandler = new ArangoDocumentHandler($connection);
+$collectionHandler = new ArangoCollectionHandler($connection);
+
+// get the post records
+$BusNumber = $_POST['BusNumber'];
+$Source = $_POST['Source'];
+$Destination = $_POST['Destination'];
+$Date = $_POST['Date'];
+//trip_incharge_post_combine
+$did = $_POST['did'];
+$cid = $_POST['cid'];
+$sdep = $_POST['sdep'];
+$sarr = $_POST['sarr'];
+
+//generating trip id
+$query = 'FOR b IN busDetails SORT b.trip_no DESC LIMIT 1 RETURN b.trip_no';
+$statement = new ArangoStatement($connection, ['query' => $query, '_flat' => true]);
+$cursor = $statement->execute();
+$lastTripNo = $cursor->current();
+
+$tripNO = ($lastTripNo !== null) ? $lastTripNo + 1 : 1;
+
+// database insert for Bus_details
+$busDetailsDocument = new ArangoDocument();
+$busDetailsDocument->set('trip_no', (int)$tripNO);
+$busDetailsDocument->set('bus_no', (int)$BusNumber);
+$busDetailsDocument->set('Source', $Source);
+$busDetailsDocument->set('Destination', $Destination);
+$busDetailsDocument->set('TripDate', $Date);
+
+try {
+    $documentHandler->save('busDetails', $busDetailsDocument);
+} catch (ArangoDBClient\Exception $e) {
+    echo "Error inserting bus details: " . $e->getMessage();
+}
+
+// database insert for trip_incharge
+$tripInchargeDocument = new ArangoDocument();
+$tripInchargeDocument->set('trip_no_incharge', (int)$tripNO);
+$tripInchargeDocument->set('Driver_emp_id', $did);
+$tripInchargeDocument->set('Conductor_emp_id', $cid);
+$tripInchargeDocument->set('scheduled_dept_time', $sdep);
+$tripInchargeDocument->set('scheduled_arr_time', $sarr);
+
+try {
+    $documentHandler->save('tripIncharge', $tripInchargeDocument);
+    echo "<p style='color:#EA1C2C;margin:70px 0px 0px 0px;'>Trip number generated Successfully. Trip Number is '{$tripNO}'.</p>";
+} catch (ArangoDBClient\Exception $e) {
+    echo "Error inserting trip incharge details: " . $e->getMessage();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Conductor Trip Details</title>
+    <link rel="icon" type="image/x-icon" href="../Images/icon1.png">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <link rel="stylesheet" type="text/css" href="../Login/dist/style.css">
+    <link rel="stylesheet" type="text/css" href="tripDetails.css">
+    <style>
+        body {
+            background: url("../Images/bus_huit.png") no-repeat center;
+            background-size: cover;
+
+        }
+    </style>
+</head>
+
+<body>
+    <nav id="mainNavbar" class="navbar navbar-light navbar-expand-md py-1 px-2 fixed-top"
+        style="background-color: #0cb2f9;">
+        <a class="navbar-brand" href="#">
+            <img src="../Images/icon1.png" width="45" height="35" class="d-inline-block align-middle" alt="">
+            Xe Buýt TP.HCM
+        </a>
+
+        <button class="navbar-toggler" data-toggle="collapse" data-target="#navLinks" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-between" id="navLinks">
+
+
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a href="AdminDashboard.php" class="nav-link">TRANG CHỦ</a>
+                </li>
+                <li class="nav-item">
+                    <a href="../about.html" class="nav-link">ABOUT</a>
+                </li>
+                <li class="nav-item">
+                    <a href="../team.html" class="nav-link">TEAM</a>
+                </li>
+
+
+            </ul>
+            <span class="nav-item ml-auto">
+                <a class="nav-link" role="button" href="AdminDashboard.php">Quay lại</a>
+            </span>
+            <span class="nav-item">
+                <a class="nav-link" role="button" href="../Login/dist/logout.php">Đăng xuất</a>
+            </span>
+
+
+        </div>
+    </nav>
+    <div class="maindiv" id="maindiv" style="width: 40%;">
+
+        <form action="SuperAdmin.php" method="post">
+            <div class="title">
+
+                <h2 class="text-center">Nhập chi tiết chuyến đi</h2>
+            </div>
+            <br>
+            <div class="info">
+
+                <!-- Trip Number: <input type="number" placeholder="Trip Number" name="TripNumber"><br><br> ..this is being autogenerated -->
+
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="totalRevenue">Số xe buýt:</label>
+                        <input class="form-control" input type="number" placeholder=" 48 52 16,.." name="BusNumber"
+                            required>
+
+                    </div>
+                    <div class="col">
+                        <label for="Date">Ngày bắt đầu: </label>
+                        <input class="form-control" type="date" placeholder="Date" name="Date" required style="border-radius: 10px;
+                    box-shadow: 5px 5px 5px #aaaaaa;">
+
+                    </div>
+
+
+
+                </div>
+                <div class="form-group row">
+
+                    <div class="col">
+                        <label for="BusNumber">Nguồn: </label>
+                        <input class="form-control" type="text" placeholder="Điểm xuất phát" name="Source" required>
+                    </div>
+                    <div class="col">
+                        <label for="totalRevenue">Điểm đến: </label>
+                        <input class="form-control" type="text" placeholder="Điểm đến" name="Destination" required>
+
+                    </div>
+
+
+                </div>
+
+                <div class="form-group row">
+
+                    <div class="col">
+                        <label for="sdep">Giờ khởi hành dự kiến: </label>
+                        <input class="form-control" type="time" placeholder="Destination" name="sdep" required>
+                    </div>
+                    <div class="col">
+                        <label for="sarr">Giờ đến dự kiến: </label>
+                        <input class="form-control" type="time" placeholder="Date" name="sarr" required>
+
+                    </div>
+
+
+                </div>
+
+                <div class="form-group row">
+
+                    <div class="col">
+                        <label for="did">ID tài xế: </label>
+                        <input class="form-control" type="text" placeholder="ID tài xế" name="did" required>
+                    </div>
+                    <div class="col">
+                        <label for="cid">ID người soát vé: </label>
+                        <input class="form-control" type="text" placeholder="ID người soát vé" name="cid" required>
+
+                    </div>
+
+
+                </div>
+            </div>
+
+            <br>
+
+            <button type="submit">Xác nhận</button>
+        </form>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+
+    <script>
+        $(function () {
+            $(document).scroll(function () {
+                var $nav = $("#mainNavbar");
+                $nav.toggleClass("scrolled", $(this).scrollTop() > $nav.height());
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+</final_file_content>
+
+IMPORTANT: For any future changes to this file, use the final_file_content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.
+
+<environment_details>
+# Visual Studio Code Visible Files
+Conductor_DashBoard/SuAdminAddTrip.php
+
+# Visual Studio Code Open Tabs
+git show
+README.md
+Fontspring-DEMO-theseasons-bd.otf
+about.html
+Login/README.md
+Login/LICENSE.txt
+Login/src/style.css
+Login/dist/logintest.php
+Conductor_DashBoard/Driver_DashBoard.php
+Conductor_DashBoard/AdminDashboard.php
+Conductor_DashBoard/ConTripView.php
+Login/src/index.html
+Login/src/script.js
+Login/dist/sd'/logout.php
+Login/dist/sd'/index.html
+team.css
+timetable.php
+Conductor_DashBoard/timetable.php
+Conductor_DashBoard/testchart.php
+Conductor_DashBoard/tripDetails.css
+Conductor_DashBoard/tripDetailsForm.php
+db/db.sql
+team.html
+composer.json
+Conductor_DashBoard/arangodb_connection.php
+Conductor_DashBoard/AddCon.php
+Conductor_DashBoard/SuperAdmin.php
+GenerateTrip&Display/g.php
+Conductor_DashBoard/connect.php
+Conductor_DashBoard/dconnect.php
+Conductor_DashBoard/DriTripView.php
+Conductor_DashBoard/passengerDetailsForm.php
+Conductor_DashBoard/fetchBusData.php
+Conductor_DashBoard/AllBusRevenue.php
+Conductor_DashBoard/BusDetailsDropDown.php
+Conductor_DashBoard/LossMakingTriggerDisplay.php
+Conductor_DashBoard/Milage.php
+Conductor_DashBoard/milageBusNo.php
+Conductor_DashBoard/quicktripsTriggerDisplay.php
+Conductor_DashBoard/SpecificRevenue.php
+Conductor_DashBoard/SuAdminAddTrip.php
+Conductor_DashBoard/tripconnect.php
+Login/dist/adminlogin.php
+Login/dist/sd'/login.php
+Login/dist/login.php
+Conductor_DashBoard/ConFillTripDetails.php
+Conductor_DashBoard/AddDri.php
+Images/bg-dark.jpg
+Images/Hieu.jpg
+Images/Nghi.jpg
+Images/Quang.jpeg
+Conductor_DashBoard/conductorDashboard.php
+Login/dist/script.js
+Login/dist/style.css
+Login/dist/logout.php
+Images/icon1.png
+Images/Abhinav.jpg
+Images/Navin.jpeg
+Images/icon.png
+Images/bus_huit.png
+Conductor_DashBoard/driverDetails.css
+Conductor_DashBoard/driverDetails.php
+
+# Current Time
+10/14/2025, 11:15:15 PM (Asia/Saigon, UTC+7:00)
+
+# Context Window Usage
+253,819 / 1,048.576K tokens used (24%)
+
+# Current Mode
+ACT MODE

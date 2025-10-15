@@ -1,0 +1,78 @@
+/*Navbar CSS*/
+#mainNavbar {
+	font-size: 1.5rem;
+	font-weight: 100;
+}
+
+#mainNavbar .nav-link {
+	color: white;
+}
+
+#mainNavbar .nav-link:hover {
+	color: #EA1C2C;
+}
+
+#mainNavbar .navbar-brand {
+	color: #EA1C2C;
+	font-size: 1.5rem;
+}
+
+.navbar.scrolled {
+	background: rgb(222, 192, 222);
+	transition: background 500ms;
+}
+
+@media (max-width: 1200px) {
+	#headingGroup h1 {
+		font-weight: 100;
+		font-size: 3rem;
+	}
+
+}
+
+#grad {
+    background-image: url("https://storage.googleapis.com/blogvxr-uploads/2024/07/ben-xe-an-suong.jpg");
+	
+}
+
+
+
+button {
+
+    /* remove default behavior */
+    appearance: none;
+    -webkit-appearance: none;
+
+    /* usual styles */
+    padding: 10px;
+    border: none;
+    background-color: #3F51B5;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 5px;
+    width: 100%;
+
+}
+
+
+#maindiv {
+    margin: 90px auto;
+    width: 50%;
+    padding: 20px;
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 10px;
+    opacity: 1;
+}
+
+.button {
+    padding: 20px;
+    border: 10px;
+    background-color: #3F51B5;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 10px;
+    width: 25%;
+    margin: 30px;
+}
+
